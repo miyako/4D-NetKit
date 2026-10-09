@@ -7,7 +7,7 @@
   ],
   "license": "SEE LICENSE IN LICENSE.md",
   "repository": "https://github.com/miyako/KM-NetKit",
-  "version": "21.4.0",
+  "version": "21.4.1",
   "tool": {
     "platform": "macos",
     "branch": "21%20Rx",
