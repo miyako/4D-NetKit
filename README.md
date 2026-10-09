@@ -1,6 +1,6 @@
 # KM NetKit
 
-**Version: 21R4.6.1** (based on 4D NetKit 21 R4)
+**Based on 4D NetKit 21 R4.** Releases are versioned `21.4.x`; see [Releases](https://github.com/miyako/4D-NetKit/releases) for the latest build.
 
 > [!IMPORTANT]
 > **KM NetKit is an unofficial, patched build of [4D NetKit](https://github.com/4d/4D-NetKit).** It is **not** published, maintained, or supported by 4D SAS. It exists to ship fixes ahead of the official release (originally for a presentation on 2026-10-21). For production use, prefer the official 4D NetKit that comes with 4D, and report issues in the official product to 4D, not to this repository.
@@ -12,19 +12,19 @@ KM NetKit is a fork of 4D NetKit, the 4D component that lets you connect your ap
 | Area | Change |
 |------|--------|
 | Microsoft Graph mail notifier, pull mode | `onModify` and `onDelete` now fire. Previously only `onCreate` fired. Upstream polled mail with three separate delta streams, one per change type, but Graph only reports updates and deletes for messages a stream has already returned. Mail now uses one delta stream and sorts changes client-side, the same way calendar events already worked. See [`GraphNotification`](KM-NetKit/Project/Sources/Classes/GraphNotification.4dm). |
-| Packaging | The project lives in [`KM-NetKit/`](KM-NetKit) and is built, signed, and published as GitHub releases by the [Publish](.github/workflows/publish.yml) workflow. Version numbers follow `package.json`. |
+| Packaging | The project lives in [`KM-NetKit/`](KM-NetKit) and is built, signed, and published as GitHub releases by the [Publish](.github/workflows/publish.yml) workflow. Each publish bumps the patch number in `package.json` (`21.4.x`). |
 
 Everything else is identical to upstream 4D NetKit 21 R4. The class store namespace is still **`NetKit`** (`cs.NetKit.*`), so existing code runs unchanged.
 
 ## Installation
 
-Download the component from the [releases](https://github.com/miyako/KM-NetKit/releases) page, or declare it as a GitHub dependency in your project's `Project/Sources/dependencies.json`:
+Download the component from the [releases](https://github.com/miyako/4D-NetKit/releases) page, or declare it as a GitHub dependency in your project's `Project/Sources/dependencies.json`:
 
 ```json
 {
   "dependencies": {
     "KM-NetKit": {
-      "github": "miyako/KM-NetKit"
+      "github": "miyako/4D-NetKit"
     }
   }
 }
