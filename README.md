@@ -24,7 +24,7 @@ Download the component from the [releases](https://github.com/miyako/4D-NetKit/r
 {
   "dependencies": {
     "KM-NetKit": {
-      "github": "miyako/4D-NetKit"
+      "github": "miyako/KM-NetKit"
     }
   }
 }
