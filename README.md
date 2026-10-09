@@ -109,7 +109,7 @@ For a complete walkthrough in **service mode**, see the [Tutorial: Authenticate 
 
 ---
 
-4D NetKit is developed by 4D SAS. KM NetKit is an independent, unofficial derivative of 4D NetKit and is not endorsed by 4D SAS.
+4D NetKit is developed by 4D SAS. KM NetKit is an independent, unofficial derivative of 4D NetKit and is not endorsed by 4D SAS. It is distributed under the original 4D NetKit [license](LICENSE.md).
 
 (c) Microsoft, Microsoft Office, Microsoft 365, Microsoft Graph are trademarks of the Microsoft group of companies.
 
