@@ -6,8 +6,8 @@
  *     automatically renews the subscription before expiration
  *   - **Pull** (delta query): polls the delta endpoint at a configurable interval
  *
- *   Mail pull mode uses three per-changeType delta streams; calendar/event pull mode uses
- *   one delta stream with a `knownIds` cache to classify changes.
+ *   Pull mode (mail and calendar/event) uses one unfiltered delta stream with a `knownIds`
+ *   cache to classify changes as created, updated, or deleted.
  */
 
 Class extends _GraphAPI
@@ -59,11 +59,11 @@ Class constructor($inType : Text; $inProvider : cs.OAuth2Provider; $inParameters
     // Delta query internals
     This._internals._deltaResource:=""  // Separate resource path for delta queries (e.g. calendarView instead of events)
     
-    // Microsoft Graph message delta supports changeType filtering. Calendar/event delta
-    // does not reliably support the same changeType filter, so pull mode is hybrid:
-    // - mail: 3 deltaLinks, one per changeType
-    // - event: 1 deltaLink + knownIds cache initialized by a real initial sync
-    This._internals._supportsChangeTypeFiltering:=(This._internals._type="mail")
+    // Pull mode uses 1 unfiltered deltaLink + knownIds cache initialized by a real initial sync,
+    // for both mail and event. Per-changeType streams (changeType=created|updated|deleted) are
+    // not used: Graph classifies changes relative to the items a stream has already returned,
+    // so updated/deleted streams never learn about new messages and never report their changes.
+    This._internals._supportsChangeTypeFiltering:=False
     
     This._internals._deltaLink:=""
     This._internals._knownIds:=[]
@@ -354,7 +354,7 @@ Function _startPull($inState : Text) : Object
     // Perform initial delta sync before launching the worker;
     // return the server error immediately if the API call fails (e.g. insufficient scope)
     If (This._internals._supportsChangeTypeFiltering)
-        // Mail delta: perform one initial sync per requested changeType.
+        // Per-changeType streams: currently unused (see constructor comment).
         var $changeTypes : Collection:=This._computePullChangeTypes()
         var $changeType : Text
         For each ($changeType; $changeTypes)
@@ -372,7 +372,7 @@ Function _startPull($inState : Text) : Object
             return This._returnStatus()
         End if 
     Else 
-        // Calendar/event delta: one stream + knownIds seeded by a real initial sync.
+        // Mail and calendar/event delta: one stream + knownIds seeded by a real initial sync.
         This._internals._deltaLink:=This._initialDeltaSyncWithKnownIds()
         If (Length(This._internals._deltaLink)=0)
             cs._NotificationHelper.me.cleanupStorage("graphNotifications"; $inState)
@@ -420,16 +420,18 @@ Function _initialDeltaSync($inChangeType : Text) : Text
  * @returns {Text} Delta link URL to use for subsequent polls; empty string on failure
  * @description Performs an initial delta sync with `$deltatoken=latest` to obtain
  *   a `deltaLink` for tracking future changes of one type.
- *   Used only for resources that support `changeType` filtering (currently mail).
+ *   Currently unused: `_supportsChangeTypeFiltering` is False for all types.
  *   See inline comment for details.
  */
     
 /*
-    Performs initial delta sync to obtain a deltaLink for tracking future mail changes
+    Performs initial delta sync to obtain a deltaLink for tracking future changes
     for one Graph changeType: created, updated or deleted.
     
-    This is used only for resources where Microsoft Graph supports changeType filtering
-    on delta queries, currently mail messages in this class.
+    Not used for mail anymore: each filtered stream has its own server-side sync state,
+    so the updated/deleted streams never know messages returned only by the created
+    stream, and their later modifications/deletions are never reported.
+    Mail now uses _initialDeltaSyncWithKnownIds() like calendar/event.
 */
     
     var $deltaResource : Text:=(Length(This._internals._deltaResource)>0) ? This._internals._deltaResource : This._internals._resource
@@ -469,16 +471,16 @@ Function _initialDeltaSyncWithKnownIds() : Text
  * @returns {Text} Delta link URL to use for subsequent polls; empty string on failure
  * @description Performs a full initial delta sync and seeds `_internals._knownIds` with
  *   all existing item IDs.
- *   Used for calendar/event delta where Graph does not support `changeType` filtering;
- *   subsequent polls use the `knownIds` cache to classify changes as
- *   created, updated, or deleted. See inline comment for details.
+ *   Used for both mail and calendar/event delta; subsequent polls use the `knownIds`
+ *   cache to classify changes as created, updated, or deleted.
+ *   See inline comment for details.
  */
     
 /*
     Performs a real initial delta sync and fills _knownIds with all existing items.
     
-    This is used for calendar/event delta, where Graph does not reliably support
-    changeType filtering. After this initial sync:
+    This is used for both mail and calendar/event delta (one unfiltered stream).
+    After this initial sync:
     - @removed       => deleted
     - unknown id     => created
     - already known  => updated
@@ -545,17 +547,18 @@ Function _pollDelta() : Collection
  * @private
  * @returns {Collection} Collection of `{resourceId; changeType}` objects detected since
  *   the last poll
- * @description Dispatches to `_pollDeltaUsingChangeTypeStreams` (mail) or
- *   `_pollDeltaUsingKnownIds` (calendar/event) based on `_supportsChangeTypeFiltering`.
- *   See inline comment for strategy details.
+ * @description Dispatches to `_pollDeltaUsingKnownIds` (mail and calendar/event) or
+ *   `_pollDeltaUsingChangeTypeStreams` (currently unused) based on
+ *   `_supportsChangeTypeFiltering`. See inline comment for strategy details.
  */
     
 /*
     Polls the delta endpoint.
     
-    Mail uses 3 filtered streams, one deltaLink per changeType.
-    Calendar/event uses one stream and the knownIds cache initialized by
-    _initialDeltaSyncWithKnownIds().
+    Mail and calendar/event use one unfiltered stream and the knownIds cache
+    initialized by _initialDeltaSyncWithKnownIds().
+    Per-changeType filtered streams are not used: Graph only reports updates/deletes
+    for items a stream has already returned, so updated/deleted streams stay empty.
 */
     
     If (This._internals._supportsChangeTypeFiltering)
@@ -575,7 +578,8 @@ Function _pollDeltaUsingChangeTypeStreams() : Collection
  * @returns {Collection} Combined collection of `{resourceId; changeType}` from all
  *   enabled change type streams
  * @description Polls each delta stream (one per enabled changeType) and merges results.
- *   Used for mail, where Graph supports `changeType` filtering on delta queries.
+ *   Currently unused: per-changeType streams never report updates/deletes for messages
+ *   first returned on another stream, so mail uses `_pollDeltaUsingKnownIds` instead.
  */
     
     var $items : Collection:=[]
